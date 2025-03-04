@@ -5,25 +5,17 @@ from Jarvis.config import GROQ_KEY, TAVILY_API_KEY, MONGODB_CONNECTION_STRING, M
 import datetime
 import json
 import re
-from typing import Any, Dict, List
+from typing import  List
 
 from langchain_community.agent_toolkits import GmailToolkit
 from langchain_community.tools.gmail.utils import (
     build_resource_service,
     get_gmail_credentials,
 )
-from langchain_community.tools import DuckDuckGoSearchRun,DuckDuckGoSearchResults  
 from langchain_groq import ChatGroq
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
 from Jarvis.objective.memory import MongoDBHandler
 from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import Tool
-from langchain_ollama import ChatOllama
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder,HumanMessagePromptTemplate, SystemMessagePromptTemplate, AIMessagePromptTemplate
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
-from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
-from typing import Dict, List, Optional
 from dataclasses import dataclass
 from langchain_core.tools import Tool
 import webbrowser
@@ -36,18 +28,6 @@ credentials = get_gmail_credentials(
     client_secrets_file=CREDENTIAL_FILE_PATH,  # Path to your credentials.json
 )
 api_resource = build_resource_service(credentials=credentials)
-
-# Initialize the Gmail Toolkit and get the tools
-#toolkit = GmailToolkit(api_resource=api_resource)
-#gmail_tools = toolkit.get_tools()
-
-'''
-# Initialize DuckDuckGo Search Tool
-ddg_search = DuckDuckGoSearchRun()
-ddg_search_tool = [ddg_search]
-'''
-
-
 
 @dataclass
 class SearchResult:
@@ -72,7 +52,7 @@ class SearchTools:
                 search_depth="basic",
                 max_results=3
             )
-            #print(f"Search response: {search_response['results']}")
+           
             # Clear previous results
             self.last_search_results.clear()
             
@@ -156,7 +136,7 @@ class ObjectiveAgent:
             self.gmail_toolkit = GmailToolkit(api_resource=api_resource)
             self.gmail_tools = self.gmail_toolkit.get_tools()
 
-                # Initialize search tools with Tavily API key
+            # Initialize search tools with Tavily API key
             tavily_api_key = TAVILY_API_KEY  # Make sure to set this in your environment
             if not tavily_api_key:
                 raise ValueError("TAVILY_API_KEY environment variable is not set")
@@ -340,10 +320,6 @@ class ObjectiveAgent:
         #------------------------QUERY SETUP------------------------------------#
         # Add the current user query as the latest message
         message_list.append({"role": "user", "content": text})
-
-        #print("-------------------------------")
-        #print(f"Message List: {message_list}")
-        #print("-------------------------------")
         
         #---------------------------------TOOL SETUP--------------------------------------#
         # Select appropriate tools based on the query
@@ -361,8 +337,6 @@ class ObjectiveAgent:
             stream_mode="values",
         )
 
-
-        
         #--------------------------MEMORY MANAGEMENT------------------------------#
         # Add the current query and response to memory for future context
         self.add_to_memory("user", text)
@@ -439,39 +413,3 @@ def interactive_chat():
         except Exception as e:
             print(f"An error occurred: {e}")
 
-
-'''
-if __name__ == "__main__":
-    interactive_chat()
-
-
-# Main Execution
-if __name__ == "__main__":
-    # MongoDB Configuration
-    db_config = {
-        "connection_string": "mongodb://localhost:27017/",
-        "db_name": "assistant_memory",
-        "collection_name": "chat_history"
-    }
-
-    # Instantiate the agent
-    obj_agent = ObjectiveAgent(db_config=db_config)
-
-    # Example interactions
-    #print("Testing general query:")
-    response = obj_agent.execute("Hi how are you?")
-    #print(response)
-
-    #print("\n\nTesting search query:")
-    #search_response = obj_agent.execute("Who won the Nobel Prize in Physics in 2024?")
-    #print("response:",search_response)
-
-    #print("\n\nTesting email-related query:")
-    #email_response = obj_agent.execute("Send an email to clatepreite@gmail.com telling her to check her inbox.")
-
-    #mail_response = obj_agent.execute("Send an email to francescomanco.2001@gmail.com telling him to check his inbox. ")
-    
-    # View conversation history
-    #print("\n\nConversation History:")
-    #print(obj_agent.get_memory_history())
-'''
