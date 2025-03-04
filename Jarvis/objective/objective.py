@@ -174,10 +174,47 @@ class ObjectiveAgent:
                 collection_name=db_config["collection_name"]
             )
             
+            
             # Initialize agent executor with no tools
             self.agent_executor = create_react_agent(self.llm, [])
 
-    
+    def validate(self, response: str) -> dict:
+        """Perform comprehensive validation of the response"""
+        print("response:", response)
+        try:
+            validation_prompt = f"""
+            Act as a quality control system. Analyze this response strictly:
+
+            {response}
+
+            Check ONLY for:
+            1. Clear factual errors
+            2. Dangerous content
+            3. Incorrect information
+            4. Inappropriate language
+
+            If the task is completed successfully, respond EXACTLY: "VALID"
+            If NO issues found, respond EXACTLY: "VALID"
+            If ANY issues, respond EXACTLY: "INVALID"
+            """
+
+            self.agent_executor = create_react_agent(self.llm, [])
+
+            validation_response = self.agent_executor.invoke(
+            {"messages": validation_prompt},
+            stream_mode="values",
+        )
+            print("Validation response:", validation_response["messages"][-1].content)
+            if validation_response["messages"][-1].content == "VALID":
+                return "VALID"
+            else:
+                return "INVALID"
+        except Exception as e:
+            print(f"Validation error: {e}")
+            return "INVALID"
+
+
+        
     def requires_internet_search(self, user_request: str) -> bool:
         """
         Determine if internet search tools are required for the task.
@@ -337,13 +374,27 @@ class ObjectiveAgent:
             stream_mode="values",
         )
 
+        #Get raw response
+        raw_response = responses["messages"][-1].content
+        
+        # Perform sanity check with Objective Hemisphere
+        validation = self.validate(raw_response)
+        
+        # Process validation results
+        if validation == "VALID":
+            final_response = raw_response
+        else:
+                final_response = self.agent_executor.invoke(
+                {"messages": message_list},
+                stream_mode="values",
+            )
         #--------------------------MEMORY MANAGEMENT------------------------------#
         # Add the current query and response to memory for future context
         self.add_to_memory("user", text)
-        self.add_to_memory("ai", responses["messages"][-1].content.strip())
+        self.add_to_memory("ai", final_response)
 
-        #return final_response.strip()
-        return responses["messages"][-1].content
+        return final_response
+        #return responses["messages"][-1].content
     
     def add_to_memory(self, message_type: str, content: str):
         """Store a message in MongoDB."""
@@ -413,3 +464,7 @@ def interactive_chat():
         except Exception as e:
             print(f"An error occurred: {e}")
 
+
+# Example usage
+if __name__ == "__main__":
+    interactive_chat()
