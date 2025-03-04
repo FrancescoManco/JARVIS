@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import os
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -21,14 +21,11 @@ MODELS_DIR = PROJ_ROOT / "models"
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
 
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+GROQ_KEY = os.getenv("GROQ_KEY")
+MONGODB_CONNECTION_STRING = os.getenv("MONGODB_CONNECTION_STRING")
+MONGODB_DATABASE_NAME = os.getenv("MONGODB_DATABASE_NAME")
+MONGODB_COLLECTION_NAME = os.getenv("MONGODB_COLLECTION_NAME")
+CREDENTIAL_FILE_PATH = os.getenv("CREDENTIAL_FILE_PATH")
+TOKEN_FILE_PATH = os.getenv("TOKEN_FILE_PATH")
 
-
-# If tqdm is installed, configure loguru with tqdm.write
-# https://github.com/Delgan/loguru/issues/135
-try:
-    from tqdm import tqdm
-
-    logger.remove(0)
-    logger.add(lambda msg: tqdm.write(msg, end=""), colorize=True)
-except ModuleNotFoundError:
-    pass

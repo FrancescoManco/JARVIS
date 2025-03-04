@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from Jarvis.config import GROQ_KEY, TAVILY_API_KEY, MONGODB_CONNECTION_STRING, MONGODB_DATABASE_NAME, MONGODB_COLLECTION_NAME, CREDENTIAL_FILE_PATH, TOKEN_FILE_PATH
 import datetime
 import json
 import re
@@ -10,10 +14,9 @@ from langchain_community.tools.gmail.utils import (
 )
 from langchain_community.tools import DuckDuckGoSearchRun,DuckDuckGoSearchResults  
 from langchain_groq import ChatGroq
-from jarvis.config import GROQ_KEY
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
-from jarvis.core.objective.memory import MongoDBHandler
+from Jarvis.objective.memory import MongoDBHandler
 from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import Tool
 from langchain_ollama import ChatOllama
@@ -28,9 +31,9 @@ from tavily import TavilyClient
 import os
 # Gmail API Credentials
 credentials = get_gmail_credentials(
-    token_file="C:\\Users\\Utente\\Desktop\\J.A.R.V.I.S\\jarvis\\core\\objective\\token.json",  # Path to your token.json
+    token_file=TOKEN_FILE_PATH,  # Path to your token.json
     scopes=["https://mail.google.com/"],  # Gmail scopes
-    client_secrets_file="C:\\Users\\Utente\\Desktop\\J.A.R.V.I.S\\jarvis\\core\\objective\\credentials.json",
+    client_secrets_file=CREDENTIAL_FILE_PATH,  # Path to your credentials.json
 )
 api_resource = build_resource_service(credentials=credentials)
 
@@ -137,7 +140,7 @@ class ObjectiveAgent:
     A class to manage the objective agent with dynamic tool selection.
     """
 
-    def __init__(self, model_name="llama-3.1-70b-versatile", temperature=0, db_config=None):
+    def __init__(self, model_name="llama-3.3-70b-versatile", temperature=0, db_config=None):
             """
             Initialize the Workflow with dynamic tool selection.
             """
@@ -154,7 +157,7 @@ class ObjectiveAgent:
             self.gmail_tools = self.gmail_toolkit.get_tools()
 
                 # Initialize search tools with Tavily API key
-            tavily_api_key = "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"  # Make sure to set this in your environment
+            tavily_api_key = TAVILY_API_KEY  # Make sure to set this in your environment
             if not tavily_api_key:
                 raise ValueError("TAVILY_API_KEY environment variable is not set")
             
@@ -404,9 +407,9 @@ def interactive_chat():
     """
     # MongoDB Configuration
     db_config = {
-        "connection_string": "mongodb://localhost:27017/",
-        "db_name": "assistant_memory",
-        "collection_name": "chat_history"
+        "connection_string": MONGODB_CONNECTION_STRING,
+        "db_name": MONGODB_DATABASE_NAME,
+        "collection_name": MONGODB_COLLECTION_NAME
     }
 
     # Instantiate the agent
