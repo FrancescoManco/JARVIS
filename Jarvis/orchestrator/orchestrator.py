@@ -18,7 +18,11 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing import Sequence,Annotated,Literal
 from typing_extensions import TypedDict
 from langchain_core.messages import BaseMessage,HumanMessage,AIMessage
-
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from Jarvis.objective.objective import ObjectiveAgent
+from Jarvis.config import  MONGODB_CONNECTION_STRING, MONGODB_DATABASE_NAME, MONGODB_COLLECTION_NAME
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
@@ -36,8 +40,13 @@ class MultiAgentOrchestrator:
             model_name: Name of the LLM model to use for supervision
         """
 
-        
-        self.objective_agent = ChatOllama(model=model_name)
+        db_config = {
+        "connection_string": MONGODB_CONNECTION_STRING,
+        "db_name": MONGODB_DATABASE_NAME,
+        "collection_name": MONGODB_COLLECTION_NAME
+    }
+        #self.objective_agent = ChatOllama(model=model_name)
+        self.objective_agent = ObjectiveAgent(db_config=db_config)
         self.subjective_agent = ChatOllama(model=model_name)
         self.supervisor_agent = ChatOllama(model=model_name)
         
@@ -142,15 +151,13 @@ class MultiAgentOrchestrator:
     def objective_agent_node(self, state: AgentState) -> AgentState:
         messages = state['messages']
         last_message_content = messages[-1].content
-        print("Subjective messages:", last_message_content)
+        print("Objective messages:", last_message_content)
         if not messages:
             raise ValueError("Nessun messaggio utente per l'agente oggettivo")
-        prompt= f"""You are the Finish Agent in a multi-agent system. Your task is to DIRECTLY ANSWER requests that don't require tools or personalized generation. The user ask: "{last_message_content}"."""
-
-        response = self.objective_agent.invoke(prompt)
-        print("Objective response:", response.content)
+        response = self.objective_agent.execute(last_message_content)
+        print("Objective response:", response)
         new_messages = list(messages)
-        new_messages.append(AIMessage(content=response.content.strip()))
+        new_messages.append(AIMessage(content=response))
         
         return {"messages": new_messages, "next": "supervisor"}
 

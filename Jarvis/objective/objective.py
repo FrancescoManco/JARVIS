@@ -230,7 +230,7 @@ class ObjectiveAgent:
         
         try:
             classification = self.llm.invoke(search_prompt).content.strip().upper()
-            print(f"Search tool classification: {classification}")
+            
             return classification == "SEARCH"
         except Exception as e:
             print(f"Search tool classification error: {e}")
@@ -439,10 +439,12 @@ def interactive_chat():
         except Exception as e:
             print(f"An error occurred: {e}")
 
+
+'''
 if __name__ == "__main__":
     interactive_chat()
 
-'''
+
 # Main Execution
 if __name__ == "__main__":
     # MongoDB Configuration
