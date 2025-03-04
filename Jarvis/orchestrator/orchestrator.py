@@ -90,12 +90,13 @@ class MultiAgentOrchestrator:
         print("in supervisor node")
         # Preserve the full list of messages
         messages = state['messages']
+        print(messages[-1].type)
         last_message_content = messages[-1].content
 
         print("User message:", last_message_content)
         if not last_message_content:
             raise ValueError("Nessun messaggio utente trovato")
-
+        
         classification_prompt = f"""You are a sophisticated intent classifier.
         Classify the request into ONE of these 3 categories:
 
@@ -125,8 +126,20 @@ class MultiAgentOrchestrator:
             return {"messages": messages, "next": "objective_agent"}
         elif decision_content == "subjective":
             return {"messages": messages, "next": "subjective_agent"}
+        elif len(messages) > 1 and messages[-1].type == "ai":
+                report_template = """Create a final answer based on the entire interaction with the system reported below:
+                {agent_response}
+
+                Syntetize all the information and generate a final answer.
+                JUST give the FINAL ANSWER, no additional information.
+                """
+                report = self.supervisor_agent.invoke(
+                    report_template.format(agent_response=messages[-1].content)
+                )
+                state['messages'] = messages + [AIMessage(content=report.content)]
+                return {"messages": state['messages'], "next": "FINISH"}
         else:
-            prompt = f"""You are the Finish Agent in a multi-agent system. Your task is to DIRECTLY ANSWER requests that don't require tools or personalized generation. The user ask: "{last_message_content}"."""
+            prompt = f"""You are the Supervisor Agent in a multi-agent system. Your task is to DIRECTLY ANSWER requests that don't require tools or personalized generation. The user ask: "{last_message_content}"."""
             
             response = self.supervisor_agent.invoke(prompt)
             new_messages = list(messages)
