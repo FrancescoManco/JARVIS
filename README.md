@@ -173,15 +173,12 @@ This section provides a brief overview of the **SubjectiveAgent** class, which m
 
 This section explains the functionality behind **Dreaming Routing**, a process that generates synthetic email variants using LLM prompts. Although currently tailored for emails, the approach is extendable to other contexts.
 
-## Core Functions
-
-
-### 1. Email Retrieval
+## 1. Email Retrieval
 - **`get_emails()`**  
   Authenticates using stored credentials, retrieves the last 10 sent emails via the Gmail API, and extracts the text content.  
   If emails are found, it triggers the synthetic email generation process.
 
-### 2. Synthetic Email Generation
+## 2. Synthetic Email Generation
 - **`email_generation(list_email)`**  
   Processes the list of cleaned emails to generate synthetic variants by:
   - Using a primary prompt (`prompt_email_generation`) to produce a preferred synthetic email.
