@@ -1,14 +1,14 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-from loguru import logger
+
 
 # Load environment variables from .env file if it exists
 load_dotenv()
 
 # Paths
 PROJ_ROOT = Path(__file__).resolve().parents[1]
-logger.info(f"PROJ_ROOT path is: {PROJ_ROOT}")
+
 
 DATA_DIR = PROJ_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
@@ -29,3 +29,4 @@ MONGODB_COLLECTION_NAME = os.getenv("MONGODB_COLLECTION_NAME")
 CREDENTIAL_FILE_PATH = os.getenv("CREDENTIAL_FILE_PATH")
 TOKEN_FILE_PATH = os.getenv("TOKEN_FILE_PATH")
 
+MODEL_BASE_PATH = os.getenv("MODEL_BASE_PATH")

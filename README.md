@@ -155,7 +155,7 @@ To set up the system, follow these steps:
     MONGODB_COLLECTION_NAME="your_collection_name"
     CREDENTIAL_FILE_PATH="Jarvis/objective/credentials.json"
     TOKEN_FILE_PATH="Jarvis/objective/token.json"
-    ```
+    ```:
 
 ---
 
@@ -217,6 +217,8 @@ To set up the system, follow these steps:
     ```
 
 ---
+###  FINETUNING CONFIGURATION
+1. insert a base model "llama 3.2" into "Jarvis/subjective/finetuning/base_model" 
 
 ## 🚀 RUNNING THE PROJECT
 After installing the required dependencies, navigate to the **orchestrator** folder and run:

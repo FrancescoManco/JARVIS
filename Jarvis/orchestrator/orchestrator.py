@@ -20,6 +20,9 @@ from typing_extensions import TypedDict
 from langchain_core.messages import BaseMessage,HumanMessage,AIMessage
 import sys
 import os
+
+from Jarvis.subjective.subjectiveModule import SubjectiveAgent
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from Jarvis.objective.objective import ObjectiveAgent
 from Jarvis.config import  MONGODB_CONNECTION_STRING, MONGODB_DATABASE_NAME, MONGODB_COLLECTION_NAME
@@ -45,9 +48,13 @@ class MultiAgentOrchestrator:
         "db_name": MONGODB_DATABASE_NAME,
         "collection_name": MONGODB_COLLECTION_NAME
     }
+
+
+
+        
         #self.objective_agent = ChatOllama(model=model_name)
         self.objective_agent = ObjectiveAgent(db_config=db_config)
-        self.subjective_agent = ChatOllama(model=model_name)
+        self.subjective_agent = SubjectiveAgent(memory_window_size=3)
         self.supervisor_agent = ChatOllama(model=model_name)
         
         self.config = {"configurable": {"thread_id": "1"}}
@@ -154,7 +161,7 @@ class MultiAgentOrchestrator:
         if not messages:
             raise ValueError("Nessun messaggio utente per l'agente soggettivo")
         prompt= f"""You are the Finish Agent in a multi-agent system. Your task is to DIRECTLY ANSWER requests that don't require tools or personalized generation. The user ask: "{last_message_content}"."""
-        response = self.subjective_agent.invoke(prompt)
+        response = self.subjective_agent.execute(prompt)
         print("Subjective response:", response.content)
         new_messages = list(messages)
         new_messages.append(AIMessage(content=response.content.strip()))
