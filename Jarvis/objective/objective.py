@@ -336,6 +336,7 @@ class ObjectiveAgent:
             - Use the provided chat history to maintain continuity and context. Consider both the user's preferences and prior interactions to enhance your responses.
             - For historical tool calls, summarize key actions and outcomes to provide context for ongoing conversations without overwhelming the user with unnecessary details.
             - Avoid conflating past conversations with the current query but use relevant context from the chat history to ensure consistency and accuracy.
+            IMPORTANT: When you send an email just say that "The email has been sent".
             """
 
         # Retrieve the chat history from MongoDB

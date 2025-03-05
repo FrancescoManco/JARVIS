@@ -5,6 +5,137 @@
 </a>
 
 JARVIS is an advanced digital agent project based on LLMs (Large Language Models) with a strong focus on adaptive personalization. The goal is to create a system that continuously learns from user input and feedback, improving interaction quality and offering a tailored experience. Through memory modules and fine-tuning techniques, the agent can adapt in real time to the user's preferences and style.
+---
+# MultiAgentOrchestrator Class Overview
+
+This section describes the core functioning of the **MultiAgentOrchestrator** class. The following points detail the main components:
+
+1. **Initialization (`__init__`)**
+2. **Graph Creation (`_create_graph`)**
+3. **Supervisor Node (`supervisor_node`)**
+6. **Flow Invocation (`invoke`)**
+
+---
+
+## 1. Initialization (`__init__`)
+
+The constructor initializes the orchestrator by setting up the models and memory systems:
+
+- **Database Configuration**: Reads a configuration dictionary containing the MongoDB connection string, database name, and collection name.
+- **Agent Initialization**:
+  - **Objective Agent**: An instance of `ObjectiveAgent` that handles requests requiring external tools or API interactions.
+  - **Subjective Agent**: An instance of `ChatOllama` (using the specified model) for generating personalized responses.
+  - **Supervisor Agent**: An instance of `ChatOllama` used to supervise the workflow and route the requests.
+- **Graph Setup**: Calls the `_create_graph()` method to construct the computational graph that defines the message flow between the agents.
+
+---
+
+## 2. Graph Creation (`_create_graph`)
+
+This method builds the computational graph that controls the execution flow:
+
+- **Node Definition**: A `StateGraph` is created with three main nodes:
+  - `"subjective_agent"` for handling personalized responses.
+  - `"objective_agent"` for handling tool/API-based requests.
+  - `"supervisor"` for classifying the user request and determining the next step.
+- **Edge Configuration**:
+  - Fixed edges ensure that both the subjective and objective agents send their output to the supervisor node.
+  - The supervisor node uses the `next` field in the state to decide the subsequent agent.
+  - The entry point is connected to the supervisor node via the `START` node.
+- **Memory Integration**: A memory saver (`MemorySaver`) is attached to maintain the conversation history throughout the session.
+
+---
+
+## 3. Supervisor Node (`supervisor_node`)
+
+This node analyzes the user’s request and routes it appropriately:
+
+- **Message Analysis**: Retrieves and examines the last message sent by the user.
+- **Intent Classification**:
+  - Sends a prompt to the supervisor agent to classify the request into one of three categories:
+    - **objective**: For requests that require the use of external tools or APIs.
+    - **subjective**: For requests that require personalized text generation.
+    - **finish**: If the request can be answered directly.
+- **Routing Decision**:
+  - Routes to the **objective agent** if classified as `objective`.
+  - Routes to the **subjective agent** if classified as `subjective`.
+  - If the conversation already contains an AI response, synthesizes a final answer and ends the flow.
+
+---
+
+## 6. Flow Invocation (`invoke`)
+
+This method executes the computational graph using the user’s input and extracts the final response:
+
+- **Initial State Setup**: Creates an initial state with the user’s message and sets the next node to `supervisor`.
+- **Graph Execution**: Invokes the compiled graph with the initial state, processing the request through the defined workflow.
+- **Response Extraction**: Iterates over the messages in reverse order to find the last AI-generated message, which is then returned as the final answer.
+
+
+---
+# ObjectiveAgent Functionality Overview
+
+This section describes the core functioning of the **ObjectiveAgent** class, which manages dynamic tool selection and query execution. The following points detail the main components:
+
+1. **Initialization (`__init__`)**
+2. **Tool Selection and Classification**
+3. **Response Validation (`validate`)**
+6. **Query Execution (`execute`)**
+
+---
+
+## 1. Initialization (`__init__`)
+
+- **Tool Setup**:
+  - **Gmail Toolkit**: Configures email-related tools by initializing `GmailToolkit` and retrieving the associated tools.
+  - **Search Tools**: Initializes search functionality using the Tavily API key and creates separate tools:
+    - **Search Tool (`web_search`)**: Performs internet searches via the Tavily API.
+    - **Link Tool (`open_link`)**: Opens a specific search result link based on user input.
+- **LLM Configuration**: Sets up the language model using `ChatGroq` with the specified model name, temperature, and API key.
+- **Tool Registry**: Aggregates all available tools (EMAIL, SEARCH, LINK) into a dictionary for dynamic selection.
+- **Memory Database**: Establishes a connection to MongoDB via `MongoDBHandler` to store and manage conversation history.
+- **Agent Executor Initialization**: Initializes the agent executor with no tools, to be reconfigured dynamically during query execution.
+
+---
+
+## 2. Tool Selection and Classification
+
+- **Email Tool Classification**:  
+  - The `requires_email_tools` method determines if email-related tools are needed by analyzing the user request using keyword matching and an LLM-based prompt.
+- **Internet Search Classification**:  
+  - The `requires_internet_search` method checks if the request requires an internet search or link handling, leveraging both keyword matching and an LLM prompt.
+- **Dynamic Tool Selection**:  
+  - The `select_tools` method combines the results from the email and search classifications to select and return the appropriate tools (EMAIL, SEARCH, and/or LINK) from the registry.
+
+---
+
+## 3. Response Validation (`validate`)
+
+- **Purpose**:  
+  - Ensures the quality and correctness of the response generated by the agent.
+- **Validation Process**:
+  - Constructs a validation prompt to check for clear factual errors, dangerous content, incorrect information, and inappropriate language.
+  - Invokes the agent executor with the prompt to receive a validation response.
+  - Accepts the response if it returns "VALID"; otherwise, flags it as "INVALID" to trigger a new execution if necessary.
+
+---
+
+## 6. Query Execution (`execute`)
+
+- **Query Processing**:
+  - Defines a detailed system prompt that outlines the agent’s objectives, tool usage, and chat history management.
+  - Retrieves recent conversation history from MongoDB to provide context.
+  - Appends the current user query to the structured message list.
+- **Dynamic Tool Integration**:
+  - Calls `select_tools` to determine and attach the relevant tools based on the query.
+  - Reconfigures the agent executor with the selected tools.
+- **Execution and Validation**:
+  - Executes the query using the configured LLM and the dynamic set of tools.
+  - Validates the raw response using the `validate` method.
+  - If the response is valid, it is accepted; otherwise, a new execution is performed.
+- **Memory Management**:
+  - Stores both the user query and the final validated response in MongoDB to support future context retrieval.
+
 
 ---
 
