@@ -154,18 +154,15 @@ This section provides a brief overview of the **SubjectiveAgent** class, which m
 ## 2. Intent Classification (`_determine_intent`)
 
 - **Email vs. General Query**:  
-  - Uses keyword matching and an LLM prompt to classify the request as either `EMAIL` or `OTHER`.
-  - Falls back to keyword matching on error.
+  - Use an LLM prompt to classify the request from the user.
+  
 
 ## 3. Query Execution (`execute`)
 
 - **Processing Steps**:
-  - Saves the user query in memory.
-  - Determines query intent:
-    - If `EMAIL`, it calls `generate_email` to create a structured email prompt.
-    - Otherwise, processes it as a general query.
-  - Sends the appropriate prompt to `llama` and stores the LLM response.
-  - Returns an error message if the LLM call fails.
+    - Determines query intent.
+    - Execute the query in the correct way based on the intent.
+    - Returns the answer from the agent.
 
 ## 4. Email Generation (`generate_email`)
 
