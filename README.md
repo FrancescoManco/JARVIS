@@ -169,7 +169,29 @@ This section provides a brief overview of the **SubjectiveAgent** class, which m
 - **Prompt Creation**:  
   - Constructs a professional, concise email prompt with a clear subject and message body.
 
+## 5. Data Generation (Dreaming Routine)
 
+This section explains the functionality behind **Dreaming Routing**, a process that generates synthetic email variants using LLM prompts. Although currently tailored for emails, the approach is extendable to other contexts.
+
+## Core Functions
+
+
+### 1. Email Retrieval
+- **`get_emails()`**  
+  Authenticates using stored credentials, retrieves the last 10 sent emails via the Gmail API, and extracts the text content.  
+  If emails are found, it triggers the synthetic email generation process.
+
+### 2. Synthetic Email Generation
+- **`email_generation(list_email)`**  
+  Processes the list of cleaned emails to generate synthetic variants by:
+  - Using a primary prompt (`prompt_email_generation`) to produce a preferred synthetic email.
+  - Using an alternative prompt (`prompt_email_generation_non_preferred`) to generate a non-preferred variant.
+  - This is done for the DPO Fine Tuning approach.
+  
+  Generated emails are collected until a target count is reached (e.g., 160), saved into an Excel file.
+
+## Extensibility
+The current design is focused on email data, but the underlying methodology can be adapted to other domains. By modifying the prompts and extraction routines, this workflow can generate synthetic data for various content types.
 ---
 ## 🔧 SETUP AND CONFIGURATION
 @
