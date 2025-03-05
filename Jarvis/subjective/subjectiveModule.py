@@ -19,17 +19,48 @@ class SubjectiveAgent:
         """
         folder_path =  f"model"
         if os.path.exists(folder_path) and os.listdir(folder_path):
-            print("La cartella contiene file o sottocartelle.")
+            print("No File in the Directory")
             model_name="llama_finetuning"
 
         else:
-            print("La cartella è vuota o non esiste.")
+            print("Empty folder.")
             model_name ="llama3.2"
 
 
         self.llm = ChatOllama(model=model_name, temperature=temperature)
         self.memory = ConversationBufferWindowMemory(k=memory_window_size)  # Short-term memory with a window size
 
+
+    def _determine_intent(self, query: str) -> str:
+        """
+        Determine the intent of the query.
+        """
+        email_keywords = [
+            "send email", 
+            "write email", 
+            "compose email", 
+            "email to", 
+            "draft email", 
+            "send a message",
+            "compose message",
+            "write to"
+        ]
+        email_prompt = f"""
+        Classify if the following request is related to an email action:
+        Request: "{query}"
+        
+        Respond ONLY with these two options:
+        - "EMAIL" if the request involves sending, writing, or managing emails
+        - "OTHER" for any other type of request
+        """
+        try:
+            classification = self.llm.invoke(email_prompt).content.strip().upper()
+            print("subjective classification: ", classification)
+            return classification 
+        except Exception as e:
+            print(f"Email tool classification error: {e}")
+            return "EMAIL" if any(keyword in query.lower() for keyword in email_keywords) else "OTHER"
+        
     def execute(self, query: str):
         """
         Execute the query and receive the response.
@@ -38,23 +69,45 @@ class SubjectiveAgent:
         self.memory.chat_memory.add_user_message(query)
 
         # Determine the intent of the query
-        #intent = self._determine_intent(query)
-        personalized_prompt = self.generate_email(query)
-        try:
+        intent = self._determine_intent(query)
+
+        if intent == "EMAIL":
+            personalized_prompt = self.generate_email(query)
+            print("Personalized Prompt: ", personalized_prompt)
+            try:
 
 
-            # Get the response from the LLM model
-            response = llama(personalized_prompt)
+                # Get the response from the LLM model
+                response = llama(personalized_prompt)
+                
+
+                # Store the LLM response in memory
+                self.memory.chat_memory.add_ai_message(response)
+                #print(response.content)
+
+                final_response = f""" {query} with this text body: {response.content}. SEND TO OBJECTIVE"""
+                print("Response in email gen: ", final_response)
+                return final_response
+            except Exception as e:
+                print(f"Error invoking LLM: {str(e)}")
+                return f"Error processing request: {str(e)}"
+        else:
+            
+            try:
 
 
-            # Store the LLM response in memory
-            self.memory.chat_memory.add_ai_message(response)
-            #print(response.content)
+                # Get the response from the LLM model
+                response = llama(query)
+                print("Response: ", response.content)
 
-            return response.content
-        except Exception as e:
-            print(f"Error invoking LLM: {str(e)}")
-            return f"Error processing request: {str(e)}"
+                # Store the LLM response in memory
+                self.memory.chat_memory.add_ai_message(response)
+                #print(response.content)
+
+                return response.content
+            except Exception as e:
+                print(f"Error invoking LLM: {str(e)}")
+                return f"Error processing request: {str(e)}"
 
 
 
@@ -75,26 +128,15 @@ class SubjectiveAgent:
                 
                 Insert the SUBJECT to the email (based on the email body) and use this EMAIL BODY into the 'message' field of the tool.
 
-                Generate only the email text body."""
+                Generate only the email text body.
+                               
+                """
         try:
 
-            #email_content = self.execute(email_generation_prompt)
-            #enhanced_prompt = f"{query} Insert the SUBJECT to the email (based on the email body) and use this EMAIL BODY into the 'message' field of the tool.\n\nEmail Body:\n{email_content}"
-            #self.memory.chat_memory.add_ai_message(email_content)  # Store the email content in memory
+           
             return email_generation_prompt
         except Exception as e:
             print(f"Error generating email text: {e}")
             return query
-
-
-# Main Execution
-if __name__ == "__main__":
-    # Instantiate the workflow with a memory window size of 3
-    subj_agent = SubjectiveAgent(memory_window_size=3)
-    
-    # Example user queries
-    user_query1 = "write an email al mio amico domenico roberto e scrivigli che bella giornata"
-    response1 = subj_agent.execute(user_query1)
-    print(f"Response: {response1}")
 
 

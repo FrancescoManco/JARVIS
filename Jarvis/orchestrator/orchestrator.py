@@ -21,10 +21,11 @@ from langchain_core.messages import BaseMessage,HumanMessage,AIMessage
 import sys
 import os
 
-from Jarvis.subjective.subjectiveModule import SubjectiveAgent
+
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from Jarvis.objective.objective import ObjectiveAgent
+from Jarvis.subjective.subjectiveModule import SubjectiveAgent
 from Jarvis.config import  MONGODB_CONNECTION_STRING, MONGODB_DATABASE_NAME, MONGODB_COLLECTION_NAME
 
 class AgentState(TypedDict):
@@ -108,17 +109,21 @@ class MultiAgentOrchestrator:
         Classify the request into ONE of these 3 categories:
 
         1. objective - If needing external tools/APIs 
-        2. subjective - If requiring personalized text creation
-        3. finish - If you can give the final answer directly
+        2. subjective - If requiring ONLY personalized text creation ABOUT the user preferences
+        3. finish - If THERE ISN'T ANY personal information required and the request is complete
 
         Clear examples:
         - "Send email to Marco" is objective
         - "Write a poem" is subjective
-        - "Hi!" is finish
+        - "Hi Jarvis!" is finish
+        - "How are you?" is finish
         - "Create a presentation" is subjective
         - "Who is the president in the USA?" is finish
 
-        IMPORTANT: If inte the request there is the phrase "send an email" or "send a message" you have to classify it as 'objective'.
+        IMPORTANT: If in the request there is the phrase "send an email" or "send a message" you have to classify it as 'subjective'.
+        IMPORTANT: If in the request there is the phrase "SEND TO OBJECTIVE"  you have to classify it as 'objective'.
+        IMPORTANT: If in the request there is ANY request about PERSONALIZED TEXT CREATION you have to classify it as 'finish'.
+        
         Analyze this request: "{last_message_content}"
 
         Respond ONLY with one word:
@@ -134,17 +139,34 @@ class MultiAgentOrchestrator:
         elif decision_content == "subjective":
             return {"messages": messages, "next": "subjective_agent"}
         elif len(messages) > 1 and messages[-1].type == "ai":
-                report_template = """Create a final answer based on the entire interaction with the system reported below:
-                {agent_response}
 
-                Syntetize all the information and generate a final answer.
-                JUST give the FINAL ANSWER, no additional information.
-                """
-                report = self.supervisor_agent.invoke(
-                    report_template.format(agent_response=messages[-1].content)
-                )
-                state['messages'] = messages + [AIMessage(content=report.content)]
-                return {"messages": state['messages'], "next": "FINISH"}
+                # Self judgment prompt: evaluate the quality of the last AI response
+                judgment_prompt = f"""Analyze the following response: "{messages[-1].content}"
+                Evaluate if this response is sufficiently complete and relevant.
+                Answer ONLY with 'good' if the response is satisfactory, or 'bad' if it is not."""
+                judgment_result = self.supervisor_agent.invoke(judgment_prompt)
+                judgment = judgment_result.content.strip().lower()
+                print("Judgment:", judgment)
+                
+                if judgment == "good":
+                    # If the answer is good, return it as final
+                    return {"messages": messages, "next": "FINISH"}
+                elif judgment == "bad":
+                    # If the answer is bad, reclassify the user request
+                    reclassification_prompt = f"""The previous response was not satisfactory.
+                    Reconsider the following user request: "{last_message_content}"
+                    Classify the request only as 'objective' or 'subjective'."""
+                    reclassification = self.supervisor_agent.invoke(reclassification_prompt)
+                    reclassification_decision = reclassification.content.strip().lower()
+                    print("Reclassification:", reclassification_decision)
+                    if reclassification_decision == "objective":
+                        return {"messages": messages, "next": "objective_agent"}
+                    elif reclassification_decision == "subjective":
+                        return {"messages": messages, "next": "subjective_agent"}
+                    else:
+                        raise ValueError("Invalid reclassification result")
+                else:
+                    raise ValueError("Invalid self judgment result")
         else:
             prompt = f"""You are the Supervisor Agent in a multi-agent system. Your task is to DIRECTLY ANSWER requests that don't require tools or personalized generation. The user ask: "{last_message_content}"."""
             
@@ -156,15 +178,15 @@ class MultiAgentOrchestrator:
         
     def subjective_agent_node(self, state: AgentState) -> AgentState:
         messages = state['messages']
+       
         last_message_content = messages[-1].content
         print("Subjective messages:", last_message_content)
         if not messages:
-            raise ValueError("Nessun messaggio utente per l'agente soggettivo")
-        prompt= f"""You are the Finish Agent in a multi-agent system. Your task is to DIRECTLY ANSWER requests that don't require tools or personalized generation. The user ask: "{last_message_content}"."""
-        response = self.subjective_agent.execute(prompt)
-        print("Subjective response:", response.content)
+            raise ValueError("No Message")
+        response = self.subjective_agent.execute(last_message_content)
+        print("Subjective response:", response)
         new_messages = list(messages)
-        new_messages.append(AIMessage(content=response.content.strip()))
+        new_messages.append(AIMessage(content=response))
         
         return {"messages": new_messages, "next": "supervisor"}
     
@@ -173,7 +195,7 @@ class MultiAgentOrchestrator:
         last_message_content = messages[-1].content
         print("Objective messages:", last_message_content)
         if not messages:
-            raise ValueError("Nessun messaggio utente per l'agente oggettivo")
+            raise ValueError("No Message")
         response = self.objective_agent.execute(last_message_content)
         print("Objective response:", response)
         new_messages = list(messages)
