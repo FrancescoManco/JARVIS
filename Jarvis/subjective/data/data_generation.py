@@ -50,7 +50,7 @@ def remove_urls(text):
 
 # Funzione per ottenere le email inviate
 def get_emails():
-    print("genero_email")
+    
     credentials_path = f'D:/Jarvis/credentials_1.json'
     if not os.path.exists(credentials_path):
         print("Autenticazione dispositivo non effettuata")

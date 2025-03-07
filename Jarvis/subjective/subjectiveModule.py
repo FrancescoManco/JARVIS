@@ -19,11 +19,11 @@ class SubjectiveAgent:
         """
         folder_path =  f"model"
         if os.path.exists(folder_path) and os.listdir(folder_path):
-            print("No File in the Directory")
+            
             model_name="llama_finetuning"
 
         else:
-            print("Empty folder.")
+            
             model_name ="llama3.2"
 
 
@@ -55,7 +55,7 @@ class SubjectiveAgent:
         """
         try:
             classification = self.llm.invoke(email_prompt).content.strip().upper()
-            print("subjective classification: ", classification)
+            
             return classification 
         except Exception as e:
             print(f"Email tool classification error: {e}")
@@ -73,7 +73,7 @@ class SubjectiveAgent:
 
         if intent == "EMAIL":
             personalized_prompt = self.generate_email(query)
-            print("Personalized Prompt: ", personalized_prompt)
+            
             try:
 
 
@@ -83,10 +83,10 @@ class SubjectiveAgent:
 
                 # Store the LLM response in memory
                 self.memory.chat_memory.add_ai_message(response)
-                #print(response.content)
+                
 
                 final_response = f""" {query} with this text body: {response.content}. SEND TO OBJECTIVE"""
-                print("Response in email gen: ", final_response)
+                
                 return final_response
             except Exception as e:
                 print(f"Error invoking LLM: {str(e)}")
@@ -98,11 +98,10 @@ class SubjectiveAgent:
 
                 # Get the response from the LLM model
                 response = llama(query)
-                print("Response: ", response.content)
-
+               
                 # Store the LLM response in memory
                 self.memory.chat_memory.add_ai_message(response)
-                #print(response.content)
+               
 
                 return response.content
             except Exception as e:

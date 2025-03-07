@@ -95,13 +95,13 @@ class MultiAgentOrchestrator:
     
 
     def supervisor_node(self, state: AgentState) -> AgentState:
-        print("in supervisor node")
+        
         # Preserve the full list of messages
         messages = state['messages']
-        print(messages[-1].type)
+        
         last_message_content = messages[-1].content
 
-        print("User message:", last_message_content)
+        
         if not last_message_content:
             raise ValueError("Nessun messaggio utente trovato")
         
@@ -133,7 +133,7 @@ class MultiAgentOrchestrator:
         decision = self.supervisor_agent.invoke(classification_prompt)
         decision_content = decision.content.strip().lower()
 
-        print("Decision:", decision_content)
+       
         if decision_content == "objective":
             return {"messages": messages, "next": "objective_agent"}
         elif decision_content == "subjective":
@@ -146,7 +146,7 @@ class MultiAgentOrchestrator:
                 Answer ONLY with 'good' if the response is satisfactory, or 'bad' if it is not."""
                 judgment_result = self.supervisor_agent.invoke(judgment_prompt)
                 judgment = judgment_result.content.strip().lower()
-                print("Judgment:", judgment)
+                
                 
                 if judgment == "good":
                     # If the answer is good, return it as final
@@ -158,7 +158,7 @@ class MultiAgentOrchestrator:
                     Classify the request only as 'objective' or 'subjective'."""
                     reclassification = self.supervisor_agent.invoke(reclassification_prompt)
                     reclassification_decision = reclassification.content.strip().lower()
-                    print("Reclassification:", reclassification_decision)
+                    
                     if reclassification_decision == "objective":
                         return {"messages": messages, "next": "objective_agent"}
                     elif reclassification_decision == "subjective":
@@ -180,11 +180,11 @@ class MultiAgentOrchestrator:
         messages = state['messages']
        
         last_message_content = messages[-1].content
-        print("Subjective messages:", last_message_content)
+        
         if not messages:
             raise ValueError("No Message")
         response = self.subjective_agent.execute(last_message_content)
-        print("Subjective response:", response)
+        
         new_messages = list(messages)
         new_messages.append(AIMessage(content=response))
         
@@ -193,11 +193,11 @@ class MultiAgentOrchestrator:
     def objective_agent_node(self, state: AgentState) -> AgentState:
         messages = state['messages']
         last_message_content = messages[-1].content
-        print("Objective messages:", last_message_content)
+        
         if not messages:
             raise ValueError("No Message")
         response = self.objective_agent.execute(last_message_content)
-        print("Objective response:", response)
+        
         new_messages = list(messages)
         new_messages.append(AIMessage(content=response))
         
@@ -218,7 +218,7 @@ class MultiAgentOrchestrator:
         for msg in reversed(result['messages']):
             if isinstance(msg, AIMessage):
                 return msg.content
-        return "Nessuna risposta generata"
+        return "No response found"
 
     def interactive_chat(self):
         """

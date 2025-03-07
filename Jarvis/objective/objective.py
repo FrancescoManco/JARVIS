@@ -58,7 +58,7 @@ class SearchTools:
             
             # Process results
             if search_response["results"] != [] :
-                #print("Yes")
+                
                 formatted_response = f" Search Results for: '{query}'\n\n"
                 
                 for i, result in enumerate(search_response['results']):
@@ -79,7 +79,7 @@ class SearchTools:
                     formatted_response += f"-------------------------------------------\n\n"
                 
                 formatted_response += "\nTo open any link, just say 'open link X' where X is the result number."
-                print(f"Formatted response: {formatted_response}")
+                
                 return formatted_response
             else:
                 return "No results found for your search. Please try a different query."
@@ -180,7 +180,7 @@ class ObjectiveAgent:
 
     def validate(self, response: str) -> dict:
         """Perform comprehensive validation of the response"""
-        print("response:", response)
+        
         try:
             validation_prompt = f"""
             Act as a quality control system. Analyze this response strictly:
@@ -204,7 +204,7 @@ class ObjectiveAgent:
             {"messages": validation_prompt},
             stream_mode="values",
         )
-            print("Validation response:", validation_response["messages"][-1].content)
+           
             if validation_response["messages"][-1].content == "VALID":
                 return "VALID"
             else:

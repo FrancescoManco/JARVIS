@@ -12,11 +12,11 @@ def llama(prompt: str) -> Any:
     """
     folder_path = f"Jarvis/subjective/finetuning/model"
     if os.path.exists(folder_path) and os.listdir(folder_path):
-        print("La cartella contiene file o sottocartelle.")
+        
         model_name = "llama_finetuning"
 
     else:
-        print("La cartella è vuota o non esiste.")
+       
         model_name = "llama3.2"
     llm = ChatOllama(model=model_name, temperature=0)
 
