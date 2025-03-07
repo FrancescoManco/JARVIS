@@ -188,7 +188,8 @@ This section explains the functionality behind **Dreaming Routing**, a process t
   Generated emails are collected until a target count is reached (e.g., 160), saved into an Excel file.
 
 ## Extensibility
-The current design is focused on email data, but the underlying methodology can be adapted to other domains. By modifying the prompts and extraction routines, this workflow can generate synthetic data for various content types.
+
+- The current design is focused on email data, but the underlying methodology can be adapted to other domains. By modifying the prompts and extraction routines, this workflow can generate synthetic data for various content types.
 ---
 ## 🔧 SETUP AND CONFIGURATION
 @
